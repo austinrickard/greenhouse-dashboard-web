@@ -1,9 +1,18 @@
 [build]
-  command = "pip install -r requirements-build.txt && python scripts/fetch_data.py && npm install && npm run build"
+  command = """
+    echo '=== Python version ===' && python3 --version && \
+    echo '=== Installing Python deps ===' && pip3 install -r requirements-build.txt && \
+    echo '=== GOOGLE_APPLICATION_CREDENTIALS_JSON set? ===' && \
+    if [ -z "$GOOGLE_APPLICATION_CREDENTIALS_JSON" ]; then echo 'WARNING: env var not set!'; else echo 'Yes (length: '$(echo -n "$GOOGLE_APPLICATION_CREDENTIALS_JSON" | wc -c)')'; fi && \
+    echo '=== Fetching data ===' && python3 scripts/fetch_data.py && \
+    echo '=== Data files ===' && ls -la public/data/ && \
+    echo '=== Installing npm deps ===' && npm install && \
+    echo '=== Building ===' && npm run build
+  """
   publish = "dist"
 
 [build.environment]
-  NODE_VERSION = "24"
+  NODE_VERSION = "20"
   PYTHON_VERSION = "3.11"
 
 # SPA fallback — serve index.html for all routes
