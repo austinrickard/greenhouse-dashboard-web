@@ -1,27 +1,23 @@
 #!/bin/bash
 set -e
 
-echo "=== Python version ==="
-python3 --version
+# If data files already have content (committed to repo), skip the BQ fetch
+JOBS_SIZE=$(wc -c < public/data/jobs.json 2>/dev/null || echo "0")
 
-echo "=== Checking GOOGLE_APPLICATION_CREDENTIALS_JSON ==="
-if [ -z "$GOOGLE_APPLICATION_CREDENTIALS_JSON" ]; then
-  echo "WARNING: GOOGLE_APPLICATION_CREDENTIALS_JSON is NOT set!"
+if [ "$JOBS_SIZE" -gt 10 ]; then
+  echo "=== Data files already present (jobs.json: ${JOBS_SIZE} bytes), skipping BQ fetch ==="
 else
-  echo "Yes, env var is set (length: $(echo -n "$GOOGLE_APPLICATION_CREDENTIALS_JSON" | wc -c) chars)"
+  echo "=== Data files empty, attempting BQ fetch ==="
+  if [ -n "$GOOGLE_APPLICATION_CREDENTIALS_JSON" ]; then
+    pip3 install -r requirements-build.txt
+    python3 scripts/fetch_data.py
+  else
+    echo "WARNING: No credentials set and no data files — dashboard will be empty"
+  fi
 fi
-
-echo "=== Installing Python deps ==="
-pip3 install -r requirements-build.txt
-
-echo "=== Fetching data from BigQuery ==="
-python3 scripts/fetch_data.py
 
 echo "=== Data files ==="
 ls -la public/data/
-
-echo "=== Installing npm deps ==="
-npm install
 
 echo "=== Building React app ==="
 npm run build:vite

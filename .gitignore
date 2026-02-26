@@ -23,8 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 
-# Generated data (fetched at build time)
-public/data/*.json
+# Generated data (fetched at build time, but committed for now
+# until a service account is set up for automated Netlify builds)
+# public/data/*.json
 
 # Environment
 .env
