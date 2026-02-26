@@ -42,7 +42,7 @@ const TABLE_COLS = [
 ];
 
 export default function OpenReqs() {
-  const { filteredJobs, rawData } = useFilters();
+  const { filteredJobs } = useFilters();
 
   const openJobs = useMemo(
     () => filteredJobs.filter((r) => r.CurrentJobStatus === "open"),
@@ -53,10 +53,15 @@ export default function OpenReqs() {
     const openCount = openJobs.length;
     const daysOpen = openJobs.map((r) => r.JobOpenDays).filter((v) => v != null);
     const avgAging = daysOpen.length > 0 ? daysOpen.reduce((a, b) => a + b, 0) / daysOpen.length : null;
-    const fteCount = rawData.kpiScalars?.open_fte ?? null;
-    const remainingHC = rawData.kpiScalars?.remaining_hc ?? null;
+    // FTE count: full-time open reqs from filtered data
+    const fteCount = openJobs.filter(
+      (r) => r.EmployementType && r.EmployementType.toLowerCase().includes("full")
+    ).length;
+    // Remaining headcount: sum of open positions from filtered data
+    const totalHires = openJobs.reduce((s, r) => s + (r.TotalHires || 0), 0);
+    const remainingHC = openCount - totalHires;
     return { openCount, fteCount, remainingHC, avgAging };
-  }, [openJobs, rawData.kpiScalars]);
+  }, [openJobs]);
 
   // Treemap: Division → Department
   const treemapData = useMemo(() => {
@@ -143,11 +148,21 @@ export default function OpenReqs() {
       <MetricRow
         metrics={[
           { label: "Open Requisitions", value: fmtNumber(kpis.openCount) },
-          { label: "FTE Reqs (table)", value: fmtNumber(kpis.fteCount) },
+          { label: "FTE Reqs", value: fmtNumber(kpis.fteCount) },
           { label: "Remaining Headcount", value: fmtNumber(kpis.remainingHC) },
           { label: "Avg Aging", value: fmtDays(kpis.avgAging) },
         ]}
       />
+
+      <div className="chart-card" style={{ marginTop: 16 }}>
+        <h3 className="chart-title">Open Requisitions Detail</h3>
+        <DataTable
+          data={openJobs}
+          columns={TABLE_COLS}
+          defaultSort="JobOpenDays"
+          cellStyle={highlightAging}
+        />
+      </div>
 
       <div className="two-col" style={{ marginTop: 16 }}>
         <ChartCard
@@ -198,16 +213,6 @@ export default function OpenReqs() {
           yaxis: { title: "Applications Submitted" },
         }}
       />
-
-      <div className="chart-card">
-        <h3 className="chart-title">Open Requisitions Detail</h3>
-        <DataTable
-          data={openJobs}
-          columns={TABLE_COLS}
-          defaultSort="JobOpenDays"
-          cellStyle={highlightAging}
-        />
-      </div>
     </>
   );
 }
