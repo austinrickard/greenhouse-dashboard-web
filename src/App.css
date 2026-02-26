@@ -1,0 +1,283 @@
+/* ── Reset & Base ──────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  background: #F0F2F5;
+  color: #1A1A2E;
+  line-height: 1.5;
+}
+
+/* ── Layout ───────────────────────────────────────────────────────────────── */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 280px;
+  min-width: 280px;
+  background: white;
+  border-right: 1px solid #E0E0E0;
+  padding: 20px 16px;
+  overflow-y: auto;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  padding: 24px 32px;
+  overflow-y: auto;
+}
+
+/* ── Sidebar ──────────────────────────────────────────────────────────────── */
+.sidebar-header {
+  text-align: center;
+  padding: 10px 0 20px 0;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.nav-link {
+  display: block;
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: #444;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+}
+
+.nav-link:hover {
+  background: #F0F7FA;
+  color: #1B6B93;
+}
+
+.nav-link--active {
+  background: #E8F4F8;
+  color: #1B6B93;
+  font-weight: 600;
+}
+
+.sidebar-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.filter-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.date-range-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.date-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #CCC;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.sidebar hr {
+  border: none;
+  border-top: 1px solid #E8E8E8;
+  margin: 12px 0;
+}
+
+/* ── Loading Screen ───────────────────────────────────────────────────────── */
+.loading-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  color: #666;
+}
+
+/* ── Page Header ──────────────────────────────────────────────────────────── */
+.page-header h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.page-description {
+  color: #666;
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
+.page-header hr {
+  border: none;
+  border-top: 1px solid #E0E0E0;
+  margin: 16px 0;
+}
+
+/* ── Metric Row ───────────────────────────────────────────────────────────── */
+.metric-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.metric-card {
+  flex: 1;
+  min-width: 160px;
+  background: white;
+  border-radius: 10px;
+  padding: 20px 24px;
+  border-left: 4px solid #1B6B93;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.metric-label {
+  font-size: 0.85rem;
+  color: #666;
+  font-weight: 500;
+  margin: 0;
+}
+
+.metric-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1A1A2E;
+  margin: 4px 0 0 0;
+}
+
+.metric-delta {
+  font-size: 0.8rem;
+  color: #2ECC71;
+  margin: 2px 0 0 0;
+}
+
+/* ── Chart Card ───────────────────────────────────────────────────────────── */
+.chart-card {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  margin-bottom: 16px;
+}
+
+.chart-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1A1A2E;
+  margin-bottom: 12px;
+}
+
+/* ── Two Column Grid ──────────────────────────────────────────────────────── */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* ── Data Table ───────────────────────────────────────────────────────────── */
+.table-container {
+  overflow: auto;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.data-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.data-table th {
+  background: #F8F9FA;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #444;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 2px solid #E0E0E0;
+  white-space: nowrap;
+}
+
+.data-table th:hover {
+  background: #EEF1F3;
+}
+
+.data-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #F0F0F0;
+  white-space: nowrap;
+}
+
+.data-table tbody tr:hover {
+  background: #FAFBFC;
+}
+
+/* ── Empty State ──────────────────────────────────────────────────────────── */
+.empty-state {
+  text-align: center;
+  color: #888;
+  padding: 40px 20px;
+  font-size: 0.95rem;
+}
+
+/* ── Footer ───────────────────────────────────────────────────────────────── */
+.page-footer {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #E0E0E0;
+  color: #999;
+  font-size: 0.8rem;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .app-layout {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    min-width: 100%;
+    height: auto;
+    position: static;
+    border-right: none;
+    border-bottom: 1px solid #E0E0E0;
+  }
+  .two-col {
+    grid-template-columns: 1fr;
+  }
+  .main-content {
+    padding: 16px;
+  }
+}
