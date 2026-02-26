@@ -24,6 +24,6 @@ echo "=== Installing npm deps ==="
 npm install
 
 echo "=== Building React app ==="
-npm run build
+npm run build:vite
 
 echo "=== Done ==="
