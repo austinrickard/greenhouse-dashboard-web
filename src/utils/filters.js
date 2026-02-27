@@ -16,11 +16,18 @@ export function applyFilters(data, filters) {
     dateTo,
     statuses,
     excludeTemplates,
+    excludeInterns,
   } = filters;
 
   // Exclude template jobs by default
   if (excludeTemplates !== false) {
     filtered = filtered.filter((r) => !r.IsTemplate);
+  }
+  // Exclude intern roles
+  if (excludeInterns) {
+    filtered = filtered.filter(
+      (r) => !r.JobName || !r.JobName.toLowerCase().includes("intern")
+    );
   }
   // Job status filter
   if (statuses && statuses.length > 0) {

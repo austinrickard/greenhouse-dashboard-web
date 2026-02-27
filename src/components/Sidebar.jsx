@@ -127,6 +127,16 @@ export default function Sidebar() {
           Exclude template jobs
         </label>
 
+        <label className="filter-label">
+          <input
+            type="checkbox"
+            checked={filters.excludeInterns}
+            onChange={(e) => update("excludeInterns", e.target.checked)}
+            style={{ marginRight: 6 }}
+          />
+          Exclude intern roles
+        </label>
+
         <hr />
 
         <label className="filter-label">Region</label>

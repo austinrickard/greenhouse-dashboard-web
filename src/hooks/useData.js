@@ -5,6 +5,7 @@ const DATA_FILES = {
   hiresSource: "/data/hires_source.json",
   monthlyHires: "/data/monthly_hires.json",
   kpiScalars: "/data/kpi_scalars.json",
+  openings: "/data/openings.json",
 };
 
 export function useData() {
@@ -13,6 +14,7 @@ export function useData() {
     hiresSource: [],
     monthlyHires: [],
     kpiScalars: {},
+    openings: [],
     loading: true,
     error: null,
   });
@@ -22,15 +24,16 @@ export function useData() {
 
     async function fetchAll() {
       try {
-        const [jobsRes, hsRes, mhRes, kpiRes] = await Promise.all([
+        const [jobsRes, hsRes, mhRes, kpiRes, openingsRes] = await Promise.all([
           fetch(DATA_FILES.jobs),
           fetch(DATA_FILES.hiresSource),
           fetch(DATA_FILES.monthlyHires),
           fetch(DATA_FILES.kpiScalars),
+          fetch(DATA_FILES.openings),
         ]);
 
-        const [jobs, hiresSource, monthlyHires, kpiScalars] = await Promise.all(
-          [jobsRes.json(), hsRes.json(), mhRes.json(), kpiRes.json()]
+        const [jobs, hiresSource, monthlyHires, kpiScalars, openings] = await Promise.all(
+          [jobsRes.json(), hsRes.json(), mhRes.json(), kpiRes.json(), openingsRes.json()]
         );
 
         if (!cancelled) {
@@ -39,6 +42,7 @@ export function useData() {
             hiresSource,
             monthlyHires,
             kpiScalars,
+            openings,
             loading: false,
             error: null,
           });

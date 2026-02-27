@@ -14,6 +14,7 @@ MONTHLY_HIRES_TABLE = "geotab-hr-prod.PeopleOpsDashboard_EU.MonthlyHires_EU"
 AVG_TTH_TABLE = "geotab-hr-prod.PeopleOpsDashboard_EU.AverageTimeToHireYTD_EU"
 OPEN_FTE_TABLE = "geotab-hr-prod.PeopleOpsDashboard_EU.NumberOfOpenFulltimeReqs_EU"
 REMAINING_HC_TABLE = "geotab-hr-prod.PeopleOpsDashboard_EU.RemainingHeadcountofOpenReqs_EU"
+OPENINGS_TABLE = "geotab-hr-prod.PeopleOpsDashboard_EU.OpenClosedReqsMonth_EU"
 
 BQ_PROJECT = "geotab-hr-prod"
 OUT_DIR = os.path.join(os.path.dirname(__file__), "..", "public", "data")
@@ -132,7 +133,15 @@ def main():
         json.dump(scalars, f)
     print(f"  -> kpi_scalars.json ({scalars})")
 
-    print("5/5  Done! All JSON files written to", OUT_DIR)
+    # 5. Openings (for headcount calculation)
+    print("5/6  Openings")
+    openings_query = f"SELECT * FROM `{OPENINGS_TABLE}`"
+    openings_df = safe_query(client, openings_query, "Openings")
+    if "OpeningDate" in openings_df.columns:
+        openings_df["OpeningDate"] = pd.to_datetime(openings_df["OpeningDate"], errors="coerce")
+    df_to_json(openings_df, os.path.join(OUT_DIR, "openings.json"))
+
+    print("6/6  Done! All JSON files written to", OUT_DIR)
 
 
 if __name__ == "__main__":

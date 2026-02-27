@@ -11,6 +11,7 @@ const INITIAL_FILTERS = {
   regions: [],
   statuses: [],
   excludeTemplates: true,
+  excludeInterns: false,
   dateFrom: null,
   dateTo: null,
 };
@@ -76,11 +77,20 @@ export function FilterProvider({ data, children }) {
     };
   }, [data.jobs, filters.divisions, filters.departments]);
 
+  // Filter openings by division (only column available for filtering)
+  const filteredOpenings = useMemo(() => {
+    const openings = data.openings || [];
+    if (filters.divisions.length === 0) return openings;
+    const divSet = new Set(filters.divisions);
+    return openings.filter((r) => divSet.has(r.Division));
+  }, [data.openings, filters.divisions]);
+
   const value = {
     filters,
     setFilters,
     filteredJobs,
     filteredHiresSource,
+    filteredOpenings,
     filterOptions,
     cascadedOptions,
     rawData: data,

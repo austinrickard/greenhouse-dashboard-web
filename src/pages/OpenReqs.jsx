@@ -42,12 +42,20 @@ const TABLE_COLS = [
 ];
 
 export default function OpenReqs() {
-  const { filteredJobs } = useFilters();
+  const { filteredJobs, filteredOpenings } = useFilters();
 
   const openJobs = useMemo(
     () => filteredJobs.filter((r) => r.CurrentJobStatus === "open"),
     [filteredJobs]
   );
+
+  // Total Headcount from openings data (each opening counts as 1)
+  const totalHeadcount = useMemo(() => {
+    const openOpenings = (filteredOpenings || []).filter(
+      (r) => r.OpenClosed === "Open"
+    );
+    return openOpenings.length;
+  }, [filteredOpenings]);
 
   const kpis = useMemo(() => {
     const openCount = openJobs.length;
@@ -57,10 +65,7 @@ export default function OpenReqs() {
     const fteCount = openJobs.filter(
       (r) => r.EmployementType && r.EmployementType.toLowerCase().includes("full")
     ).length;
-    // Remaining headcount: sum of open positions from filtered data
-    const totalHires = openJobs.reduce((s, r) => s + (r.TotalHires || 0), 0);
-    const remainingHC = openCount - totalHires;
-    return { openCount, fteCount, remainingHC, avgAging };
+    return { openCount, fteCount, avgAging };
   }, [openJobs]);
 
   // Treemap: Division → Department
@@ -147,9 +152,9 @@ export default function OpenReqs() {
 
       <MetricRow
         metrics={[
-          { label: "Open Requisitions", value: fmtNumber(kpis.openCount) },
+          { label: "Total Open Jobs", value: fmtNumber(kpis.openCount) },
+          { label: "Total Headcount", value: fmtNumber(totalHeadcount) },
           { label: "FTE Reqs", value: fmtNumber(kpis.fteCount) },
-          { label: "Remaining Headcount", value: fmtNumber(kpis.remainingHC) },
           { label: "Avg Aging", value: fmtDays(kpis.avgAging) },
         ]}
       />
