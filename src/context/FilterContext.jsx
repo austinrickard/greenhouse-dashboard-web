@@ -5,6 +5,7 @@ const FilterContext = createContext(null);
 
 const INITIAL_FILTERS = {
   hiringManagers: [],
+  recruiters: [],
   divisions: [],
   departments: [],
   subDepartments: [],
@@ -44,6 +45,7 @@ export function FilterProvider({ data, children }) {
       SubDepartment: unique("SubDepartment"),
       Region: unique("Region"),
       HiringManager: unique("HiringManager"),
+      Recruiter: unique("Recruiter"),
       CurrentJobStatus: unique("CurrentJobStatus"),
     };
   }, [data.jobs]);

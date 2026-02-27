@@ -8,6 +8,7 @@ export function applyFilters(data, filters) {
 
   const {
     hiringManagers,
+    recruiters,
     divisions,
     departments,
     subDepartments,
@@ -37,6 +38,10 @@ export function applyFilters(data, filters) {
   if (hiringManagers && hiringManagers.length > 0) {
     const set = new Set(hiringManagers);
     filtered = filtered.filter((r) => set.has(r.HiringManager));
+  }
+  if (recruiters && recruiters.length > 0) {
+    const set = new Set(recruiters);
+    filtered = filtered.filter((r) => set.has(r.Recruiter));
   }
   if (divisions && divisions.length > 0) {
     const set = new Set(divisions);

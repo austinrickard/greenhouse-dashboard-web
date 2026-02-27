@@ -161,6 +161,17 @@ export default function Sidebar() {
           isClearable
         />
 
+        <label className="filter-label">Talent Partner</label>
+        <Select
+          isMulti
+          options={toOptions(filterOptions.Recruiter)}
+          value={toOptions(filters.recruiters)}
+          onChange={(sel) => update("recruiters", fromOptions(sel))}
+          styles={selectStyles}
+          placeholder="All Talent Partners"
+          isClearable
+        />
+
         <hr />
 
         <div className="date-range-row">
