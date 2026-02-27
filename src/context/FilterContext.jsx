@@ -9,7 +9,7 @@ const INITIAL_FILTERS = {
   departments: [],
   subDepartments: [],
   regions: [],
-  statuses: [],
+  statuses: ["open"],
   excludeTemplates: true,
   excludeInterns: false,
   dateFrom: null,
