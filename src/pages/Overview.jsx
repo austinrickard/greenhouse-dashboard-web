@@ -23,14 +23,16 @@ export default function Overview() {
     const openReqs = filteredJobs.filter(
       (r) => r.CurrentJobStatus === "open"
     ).length;
-    // Avg Time to Fill YTD: average DaysToAcceptedOffer for jobs with hires this year
+    // Avg Time to Fill YTD: days from JobOpenDate to JobCloseDate for jobs closed this year
     const ttfValues = filteredJobs
-      .filter((r) => {
-        if ((r.TotalHires || 0) === 0 || r.DaysToAcceptedOffer == null) return false;
-        if (!r.AcceptedOfferCreatedAt) return false;
-        return new Date(r.AcceptedOfferCreatedAt).getFullYear() === currentYear;
+      .filter((r) => r.JobOpenDate && r.JobCloseDate
+        && new Date(r.JobCloseDate).getFullYear() === currentYear)
+      .map((r) => {
+        const open = new Date(r.JobOpenDate);
+        const close = new Date(r.JobCloseDate);
+        return Math.round((close - open) / (1000 * 60 * 60 * 24));
       })
-      .map((r) => r.DaysToAcceptedOffer);
+      .filter((d) => d >= 0);
     const avgTTF = ttfValues.length > 0
       ? ttfValues.reduce((a, b) => a + b, 0) / ttfValues.length
       : null;
