@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 
+const base = import.meta.env.BASE_URL;
 const DATA_FILES = {
-  jobs: "/data/jobs.json",
-  hiresSource: "/data/hires_source.json",
-  monthlyHires: "/data/monthly_hires.json",
-  kpiScalars: "/data/kpi_scalars.json",
-  openings: "/data/openings.json",
+  jobs: `${base}data/jobs.json`,
+  hiresSource: `${base}data/hires_source.json`,
+  monthlyHires: `${base}data/monthly_hires.json`,
+  kpiScalars: `${base}data/kpi_scalars.json`,
+  openings: `${base}data/openings.json`,
 };
 
 export function useData() {
