@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useFilters } from "../context/FilterContext";
+import { applyFilters } from "../utils/filters";
 import { COLORS } from "../config";
 import { fmtNumber, fmtDays } from "../utils/formatters";
 import PageHeader from "../components/PageHeader";
@@ -7,13 +8,19 @@ import MetricRow from "../components/MetricRow";
 import ChartCard from "../components/ChartCard";
 
 export default function Overview() {
-  const { filteredJobs, rawData } = useFilters();
+  const { filteredJobs, filters, rawData } = useFilters();
+
+  // All jobs with current filters EXCEPT status (so YTD hires & TTF include closed jobs)
+  const allStatusJobs = useMemo(
+    () => applyFilters(rawData.jobs, { ...filters, statuses: [] }),
+    [rawData.jobs, filters]
+  );
 
   const kpis = useMemo(() => {
     const currentYear = new Date().getFullYear();
     const totalReqs = filteredJobs.length;
-    // YTD hires: only count hires with accepted offer in the current year
-    const ytdHires = filteredJobs.reduce((s, r) => {
+    // YTD hires: count hires with accepted offer in the current year (across all statuses)
+    const ytdHires = allStatusJobs.reduce((s, r) => {
       if ((r.TotalHires || 0) > 0 && r.AcceptedOfferCreatedAt) {
         const year = new Date(r.AcceptedOfferCreatedAt).getFullYear();
         if (year === currentYear) return s + (r.TotalHires || 0);
@@ -24,7 +31,7 @@ export default function Overview() {
       (r) => r.CurrentJobStatus === "open"
     ).length;
     // Avg Time to Fill YTD: days from JobOpenDate to JobCloseDate for jobs closed this year
-    const ttfValues = filteredJobs
+    const ttfValues = allStatusJobs
       .filter((r) => r.JobOpenDate && r.JobCloseDate
         && new Date(r.JobCloseDate).getFullYear() === currentYear)
       .map((r) => {
@@ -37,7 +44,7 @@ export default function Overview() {
       ? ttfValues.reduce((a, b) => a + b, 0) / ttfValues.length
       : null;
     return { totalReqs, ytdHires, openReqs, avgTTF };
-  }, [filteredJobs]);
+  }, [filteredJobs, allStatusJobs]);
 
   // Hires by Division
   const divHires = useMemo(() => {
