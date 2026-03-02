@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useFilters } from "../context/FilterContext";
 import { COLORS } from "../config";
-import { fmtNumber, fmtPct } from "../utils/formatters";
+import { fmtNumber, fmtDays } from "../utils/formatters";
 import PageHeader from "../components/PageHeader";
 import MetricRow from "../components/MetricRow";
 import ChartCard from "../components/ChartCard";
@@ -10,20 +10,31 @@ export default function Overview() {
   const { filteredJobs, rawData } = useFilters();
 
   const kpis = useMemo(() => {
+    const currentYear = new Date().getFullYear();
     const totalReqs = filteredJobs.length;
-    const totalApps = filteredJobs.reduce(
-      (s, r) => s + (r.TotalApplicationsSubmitted || 0),
-      0
-    );
-    const totalHires = filteredJobs.reduce(
-      (s, r) => s + (r.TotalHires || 0),
-      0
-    );
+    // YTD hires: only count hires with accepted offer in the current year
+    const ytdHires = filteredJobs.reduce((s, r) => {
+      if ((r.TotalHires || 0) > 0 && r.AcceptedOfferCreatedAt) {
+        const year = new Date(r.AcceptedOfferCreatedAt).getFullYear();
+        if (year === currentYear) return s + (r.TotalHires || 0);
+      }
+      return s;
+    }, 0);
     const openReqs = filteredJobs.filter(
       (r) => r.CurrentJobStatus === "open"
     ).length;
-    const conversion = totalApps > 0 ? (totalHires / totalApps) * 100 : 0;
-    return { totalReqs, totalApps, totalHires, openReqs, conversion };
+    // Avg Time to Fill YTD: average DaysToAcceptedOffer for jobs with hires this year
+    const ttfValues = filteredJobs
+      .filter((r) => {
+        if ((r.TotalHires || 0) === 0 || r.DaysToAcceptedOffer == null) return false;
+        if (!r.AcceptedOfferCreatedAt) return false;
+        return new Date(r.AcceptedOfferCreatedAt).getFullYear() === currentYear;
+      })
+      .map((r) => r.DaysToAcceptedOffer);
+    const avgTTF = ttfValues.length > 0
+      ? ttfValues.reduce((a, b) => a + b, 0) / ttfValues.length
+      : null;
+    return { totalReqs, ytdHires, openReqs, avgTTF };
   }, [filteredJobs]);
 
   // Hires by Division
@@ -64,10 +75,9 @@ export default function Overview() {
       <MetricRow
         metrics={[
           { label: "Total Requisitions", value: fmtNumber(kpis.totalReqs) },
-          { label: "Applications", value: fmtNumber(kpis.totalApps) },
-          { label: "Total Hires", value: fmtNumber(kpis.totalHires) },
+          { label: "Hires YTD", value: fmtNumber(kpis.ytdHires) },
           { label: "Open Requisitions", value: fmtNumber(kpis.openReqs) },
-          { label: "App \u2192 Hire Rate", value: fmtPct(kpis.conversion) },
+          { label: "Avg Time to Fill (YTD)", value: fmtDays(kpis.avgTTF) },
         ]}
       />
 
