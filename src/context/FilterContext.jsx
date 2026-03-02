@@ -3,6 +3,8 @@ import { applyFilters, applyFiltersHiresSource } from "../utils/filters";
 
 const FilterContext = createContext(null);
 
+const currentYearStart = `${new Date().getFullYear()}-01-01`;
+
 const INITIAL_FILTERS = {
   hiringManagers: [],
   recruiters: [],
@@ -13,7 +15,7 @@ const INITIAL_FILTERS = {
   statuses: ["open"],
   excludeTemplates: true,
   excludeInterns: false,
-  dateFrom: null,
+  dateFrom: currentYearStart,
   dateTo: null,
 };
 

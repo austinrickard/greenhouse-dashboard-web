@@ -10,9 +10,10 @@ import ChartCard from "../components/ChartCard";
 export default function Overview() {
   const { filteredJobs, filters, rawData } = useFilters();
 
-  // All jobs with current filters EXCEPT status (so YTD hires & TTF include closed jobs)
+  // All jobs with current filters EXCEPT status and date (so YTD hires & TTF include
+  // closed jobs and jobs opened before this year that closed this year)
   const allStatusJobs = useMemo(
-    () => applyFilters(rawData.jobs, { ...filters, statuses: [] }),
+    () => applyFilters(rawData.jobs, { ...filters, statuses: [], dateFrom: null, dateTo: null }),
     [rawData.jobs, filters]
   );
 
