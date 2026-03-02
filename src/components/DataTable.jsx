@@ -60,9 +60,12 @@ export default function DataTable({
               {columns.map((col) => {
                 const val = row[col.key];
                 const style = cellStyle ? cellStyle(col.key, val, row) : {};
+                const content = col.render
+                  ? col.render(val, row)
+                  : val != null ? String(val) : "\u2014";
                 return (
                   <td key={col.key} style={style}>
-                    {val != null ? String(val) : "\u2014"}
+                    {content}
                   </td>
                 );
               })}

@@ -29,7 +29,23 @@ function highlightAging(colKey, val) {
 
 const TABLE_COLS = [
   { key: "JobID", label: "Job ID" },
-  { key: "JobName", label: "Job Name" },
+  {
+    key: "JobName",
+    label: "Job Name",
+    render: (val, row) =>
+      row.JobID ? (
+        <a
+          href={`https://app.greenhouse.io/sdash/${row.JobID}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: "#1B6B93" }}
+        >
+          {val || "\u2014"}
+        </a>
+      ) : (
+        val || "\u2014"
+      ),
+  },
   { key: "Division", label: "Division" },
   { key: "Department", label: "Department" },
   { key: "HiringManager", label: "Hiring Manager" },
