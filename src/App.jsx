@@ -7,6 +7,7 @@ import Pipeline from "./pages/Pipeline";
 import TimeToHire from "./pages/TimeToHire";
 import OpenReqs from "./pages/OpenReqs";
 import HiresSource from "./pages/HiresSource";
+import Campus from "./pages/Campus";
 
 export default function App() {
   const data = useData();
@@ -39,6 +40,7 @@ export default function App() {
             <Route path="/time-to-hire" element={<TimeToHire />} />
             <Route path="/open-reqs" element={<OpenReqs />} />
             <Route path="/hires-source" element={<HiresSource />} />
+            <Route path="/campus" element={<Campus />} />
           </Routes>
         </main>
       </div>

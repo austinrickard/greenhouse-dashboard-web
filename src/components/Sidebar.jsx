@@ -33,6 +33,7 @@ const NAV_LINKS = [
   { to: "/time-to-hire", label: "Time-to-Hire" },
   { to: "/open-reqs", label: "Open Requisitions" },
   { to: "/hires-source", label: "Hires & Source" },
+  { to: "/campus", label: "Campus Recruiting" },
 ];
 
 export default function Sidebar() {
