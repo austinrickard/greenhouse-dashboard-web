@@ -93,6 +93,9 @@ def main():
                  "AcceptedOfferStartDate", "ApplicationSubmittedDate"]:
         if col in jobs_df.columns:
             jobs_df[col] = pd.to_datetime(jobs_df[col], errors="coerce")
+    # Deduplicate by JobID (some jobs appear twice with different Region)
+    if "JobID" in jobs_df.columns:
+        jobs_df = jobs_df.drop_duplicates(subset=["JobID"], keep="first")
     df_to_json(jobs_df, os.path.join(OUT_DIR, "jobs.json"))
 
     # 2. Hires Source
