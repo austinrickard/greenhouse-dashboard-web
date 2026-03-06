@@ -142,6 +142,14 @@ def main():
     openings_df = safe_query(client, openings_query, "Openings")
     if "OpeningDate" in openings_df.columns:
         openings_df["OpeningDate"] = pd.to_datetime(openings_df["OpeningDate"], errors="coerce")
+    # Deduplicate by OpeningID — prefer Open over Closed, then latest date
+    if "OpeningID" in openings_df.columns and not openings_df.empty:
+        openings_df["_sort_status"] = openings_df["OpenClosed"].map({"Open": 0, "Closed": 1}).fillna(2)
+        openings_df = openings_df.sort_values(
+            ["OpeningID", "_sort_status", "OpeningDate"],
+            ascending=[True, True, False],
+        ).drop_duplicates(subset=["OpeningID"], keep="first")
+        openings_df = openings_df.drop(columns=["_sort_status"])
     df_to_json(openings_df, os.path.join(OUT_DIR, "openings.json"))
 
     print("6/6  Done! All JSON files written to", OUT_DIR)

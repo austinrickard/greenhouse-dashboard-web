@@ -24,7 +24,7 @@ export default function TimeToHire() {
   const kpis = useMemo(() => {
     const tthValues = filteredJobs
       .map((r) => r.DaysToAcceptedOffer)
-      .filter((v) => v != null && !isNaN(v));
+      .filter((v) => v != null && !isNaN(v) && v >= 0);
     const daysOpenValues = filteredJobs
       .map((r) => r.JobOpenDays)
       .filter((v) => v != null && !isNaN(v));
@@ -44,7 +44,7 @@ export default function TimeToHire() {
       type: "box",
       name: div,
       y: filteredJobs
-        .filter((r) => r.Division === div && r.DaysToAcceptedOffer != null)
+        .filter((r) => r.Division === div && r.DaysToAcceptedOffer != null && r.DaysToAcceptedOffer >= 0)
         .map((r) => r.DaysToAcceptedOffer),
       marker: { color: CHART_PALETTE[i % CHART_PALETTE.length] },
     }));
@@ -52,14 +52,14 @@ export default function TimeToHire() {
 
   // Histogram of Days to Offer
   const histValues = useMemo(
-    () => filteredJobs.map((r) => r.DaysToAcceptedOffer).filter((v) => v != null),
+    () => filteredJobs.map((r) => r.DaysToAcceptedOffer).filter((v) => v != null && v >= 0),
     [filteredJobs]
   );
 
   // Monthly TTH trend
   const trendData = useMemo(() => {
     const rows = filteredJobs.filter(
-      (r) => r.JobCloseDate && r.DaysToAcceptedOffer != null
+      (r) => r.JobCloseDate && r.DaysToAcceptedOffer != null && r.DaysToAcceptedOffer >= 0
     );
     const byMonth = {};
     rows.forEach((r) => {
@@ -78,7 +78,7 @@ export default function TimeToHire() {
   const deptTTH = useMemo(() => {
     const map = {};
     filteredJobs.forEach((r) => {
-      if (r.Department && r.DaysToAcceptedOffer != null) {
+      if (r.Department && r.DaysToAcceptedOffer != null && r.DaysToAcceptedOffer >= 0) {
         if (!map[r.Department]) map[r.Department] = [];
         map[r.Department].push(r.DaysToAcceptedOffer);
       }
