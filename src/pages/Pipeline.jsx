@@ -38,7 +38,7 @@ export default function Pipeline() {
     const totalReqs = filteredJobs.length;
     const totalApps = filteredJobs.reduce((s, r) => s + (r.TotalApplicationsSubmitted || 0), 0);
     const totalScreened = filteredJobs.reduce((s, r) => s + (r.TotalScreenedApplications || 0), 0);
-    const totalHires = filteredJobs.reduce((s, r) => s + (r.TotalHires || 0), 0);
+    const totalHires = filteredJobs.filter((r) => (r.TotalHires || 0) > 0).length;
     const conversion = totalApps > 0 ? (totalHires / totalApps) * 100 : 0;
     return { totalReqs, totalApps, totalScreened, totalHires, conversion };
   }, [filteredJobs]);
@@ -48,7 +48,11 @@ export default function Pipeline() {
     const stages = [];
     const values = [];
     STAGE_COLS.forEach(({ label, key }) => {
-      const total = filteredJobs.reduce((s, r) => s + (r[key] || 0), 0);
+      // For Hires, count reqs with hires (not sum of TotalHires) to avoid
+      // inflated counts from pooled/batch requisitions
+      const total = key === "TotalHires"
+        ? filteredJobs.filter((r) => (r[key] || 0) > 0).length
+        : filteredJobs.reduce((s, r) => s + (r[key] || 0), 0);
       stages.push(label);
       values.push(total);
     });
@@ -62,7 +66,7 @@ export default function Pipeline() {
       if (!r.Division) return;
       if (!map[r.Division]) map[r.Division] = { apps: 0, hires: 0 };
       map[r.Division].apps += r.TotalApplicationsSubmitted || 0;
-      map[r.Division].hires += r.TotalHires || 0;
+      map[r.Division].hires += (r.TotalHires || 0) > 0 ? 1 : 0;
     });
     const sorted = Object.entries(map).sort((a, b) => b[1].apps - a[1].apps);
     return {
@@ -76,7 +80,7 @@ export default function Pipeline() {
   const deptHires = useMemo(() => {
     const map = {};
     filteredJobs.forEach((r) => {
-      if (r.Department) map[r.Department] = (map[r.Department] || 0) + (r.TotalHires || 0);
+      if (r.Department && (r.TotalHires || 0) > 0) map[r.Department] = (map[r.Department] || 0) + 1;
     });
     const sorted = Object.entries(map)
       .sort((a, b) => a[1] - b[1])
@@ -98,7 +102,7 @@ export default function Pipeline() {
         mode: "markers",
         name: div,
         x: divRows.map((r) => r.TotalApplicationsSubmitted),
-        y: divRows.map((r) => r.TotalHires),
+        y: divRows.map((r) => (r.TotalHires || 0) > 0 ? 1 : 0),
         text: divRows.map((r) => r.JobName),
         marker: {
           size: divRows.map((r) => Math.min(Math.max((r.JobOpenDays || 5) / 3, 5), 30)),
@@ -126,7 +130,7 @@ export default function Pipeline() {
           { label: "Total Requisitions", value: fmtNumber(kpis.totalReqs) },
           { label: "Applications", value: fmtNumber(kpis.totalApps) },
           { label: "Screened", value: fmtNumber(kpis.totalScreened) },
-          { label: "Hires", value: fmtNumber(kpis.totalHires) },
+          { label: "Reqs with Hires", value: fmtNumber(kpis.totalHires) },
           { label: "App \u2192 Hire %", value: fmtPct(kpis.conversion) },
         ]}
       />
@@ -174,7 +178,7 @@ export default function Pipeline() {
         />
 
         <ChartCard
-          title="Top 15 Departments by Hires"
+          title="Top 15 Departments by Reqs with Hires"
           data={[
             {
               type: "bar",

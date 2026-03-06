@@ -20,14 +20,15 @@ export default function Overview() {
   const kpis = useMemo(() => {
     const currentYear = new Date().getFullYear();
     const totalReqs = filteredJobs.length;
-    // YTD hires: count hires with accepted offer in the current year (across all statuses)
-    const ytdHires = allStatusJobs.reduce((s, r) => {
+    // YTD hires: count requisitions with an accepted offer in the current year.
+    // We count 1 per req (not TotalHires) because pooled/batch reqs inflate
+    // TotalHires to 100s-1000s which doesn't reflect actual individual hires.
+    const ytdHires = allStatusJobs.filter((r) => {
       if ((r.TotalHires || 0) > 0 && r.AcceptedOfferCreatedAt) {
-        const year = new Date(r.AcceptedOfferCreatedAt).getFullYear();
-        if (year === currentYear) return s + (r.TotalHires || 0);
+        return new Date(r.AcceptedOfferCreatedAt).getFullYear() === currentYear;
       }
-      return s;
-    }, 0);
+      return false;
+    }).length;
     const openReqs = filteredJobs.filter(
       (r) => r.CurrentJobStatus === "open"
     ).length;
@@ -47,11 +48,11 @@ export default function Overview() {
     return { totalReqs, ytdHires, openReqs, avgTTF };
   }, [filteredJobs, allStatusJobs]);
 
-  // Hires by Division
+  // Hires by Division (count 1 per req with hires, not TotalHires)
   const divHires = useMemo(() => {
     const map = {};
     filteredJobs.forEach((r) => {
-      if (r.Division) map[r.Division] = (map[r.Division] || 0) + (r.TotalHires || 0);
+      if (r.Division && (r.TotalHires || 0) > 0) map[r.Division] = (map[r.Division] || 0) + 1;
     });
     const entries = Object.entries(map).sort((a, b) => a[1] - b[1]);
     return {

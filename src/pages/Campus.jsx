@@ -78,14 +78,11 @@ export default function Campus() {
   const kpis = useMemo(() => {
     const openCount = openCampus.length;
 
-    // YTD hires
-    const ytdHires = allCampusJobs.reduce((s, r) => {
-      if ((r.TotalHires || 0) > 0 && r.AcceptedOfferCreatedAt) {
-        if (new Date(r.AcceptedOfferCreatedAt).getFullYear() === currentYear)
-          return s + (r.TotalHires || 0);
-      }
-      return s;
-    }, 0);
+    // YTD hires (count 1 per req, not TotalHires which is inflated on pooled reqs)
+    const ytdHires = allCampusJobs.filter((r) =>
+      (r.TotalHires || 0) > 0 && r.AcceptedOfferCreatedAt
+        && new Date(r.AcceptedOfferCreatedAt).getFullYear() === currentYear
+    ).length;
 
     // Avg Time to Fill YTD (open → close for jobs closed this year)
     const ttfValues = allCampusJobs
@@ -149,7 +146,7 @@ export default function Campus() {
     allCampusJobs.forEach((r) => {
       if (r.Division && (r.TotalHires || 0) > 0 && r.AcceptedOfferCreatedAt
         && new Date(r.AcceptedOfferCreatedAt).getFullYear() === currentYear) {
-        map[r.Division] = (map[r.Division] || 0) + (r.TotalHires || 0);
+        map[r.Division] = (map[r.Division] || 0) + 1;
       }
     });
     const entries = Object.entries(map).sort((a, b) => a[1] - b[1]);
@@ -167,7 +164,7 @@ export default function Campus() {
         const d = new Date(r.AcceptedOfferCreatedAt);
         if (d.getFullYear() === currentYear) {
           const month = r.AcceptedOfferCreatedAt.substring(0, 7);
-          byMonth[month] = (byMonth[month] || 0) + (r.TotalHires || 0);
+          byMonth[month] = (byMonth[month] || 0) + 1;
         }
       }
     });
