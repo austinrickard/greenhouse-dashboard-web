@@ -56,9 +56,10 @@ const TABLE_COLS = [
 export default function Campus() {
   const { filters, rawData } = useFilters();
 
-  // Apply all filters except status/date, then filter to campus jobs only
+  // Apply all filters except status, then filter to campus jobs only.
+  // Date and all other sidebar filters still apply.
   const allCampusJobs = useMemo(() => {
-    const all = applyFilters(rawData.jobs, { ...filters, statuses: [], dateFrom: null, dateTo: null });
+    const all = applyFilters(rawData.jobs, { ...filters, statuses: [] });
     return all.filter(isCampusJob);
   }, [rawData.jobs, filters]);
 

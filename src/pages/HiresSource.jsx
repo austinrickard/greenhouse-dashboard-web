@@ -7,10 +7,11 @@ import MetricRow from "../components/MetricRow";
 import ChartCard from "../components/ChartCard";
 
 export default function HiresSource() {
-  const { filteredJobs, filteredHiresSource, rawData } = useFilters();
+  const { filteredJobs, filteredHiresSource, rawData, filters } = useFilters();
 
   const kpis = useMemo(() => {
-    const totalHires = filteredJobs.reduce((s, r) => s + (r.TotalHires || 0), 0);
+    // Count 1 per req with hires (not summing TotalHires which is inflated on pooled reqs)
+    const totalHires = filteredJobs.filter((r) => (r.TotalHires || 0) > 0).length;
 
     // Top source from HiresSource data
     let topSource = "\u2014";
@@ -25,22 +26,22 @@ export default function HiresSource() {
       }
     }
 
-    // Top division
+    // Top division (by count of reqs with hires)
     let topDivision = "\u2014";
     const divMap = {};
     filteredJobs.forEach((r) => {
-      if (r.Division) divMap[r.Division] = (divMap[r.Division] || 0) + (r.TotalHires || 0);
+      if (r.Division && (r.TotalHires || 0) > 0) divMap[r.Division] = (divMap[r.Division] || 0) + 1;
     });
     const divEntries = Object.entries(divMap);
     if (divEntries.length > 0) {
       topDivision = divEntries.sort((a, b) => b[1] - a[1])[0][0];
     }
 
-    // Top hiring manager
+    // Top hiring manager (by count of reqs with hires)
     let topManager = "\u2014";
     const mgrMap = {};
     filteredJobs.forEach((r) => {
-      if (r.HiringManager) mgrMap[r.HiringManager] = (mgrMap[r.HiringManager] || 0) + (r.TotalHires || 0);
+      if (r.HiringManager && (r.TotalHires || 0) > 0) mgrMap[r.HiringManager] = (mgrMap[r.HiringManager] || 0) + 1;
     });
     const mgrEntries = Object.entries(mgrMap);
     if (mgrEntries.length > 0) {
@@ -50,10 +51,19 @@ export default function HiresSource() {
     return { totalHires, topSource, topDivision, topManager };
   }, [filteredJobs, filteredHiresSource]);
 
-  // Monthly Hires Trend (from dedicated monthly_hires table, fallback to jobs)
+  // Monthly Hires Trend (from dedicated monthly_hires table, filtered by date range)
   const monthlyTrend = useMemo(() => {
-    const mh = rawData.monthlyHires || [];
+    let mh = rawData.monthlyHires || [];
     if (mh.length > 0 && mh[0].Month && mh[0].FTEHires != null) {
+      // Apply date range filter from sidebar
+      if (filters.dateFrom) {
+        const from = new Date(filters.dateFrom);
+        mh = mh.filter((r) => r.Month && new Date(r.Month) >= from);
+      }
+      if (filters.dateTo) {
+        const to = new Date(filters.dateTo);
+        mh = mh.filter((r) => r.Month && new Date(r.Month) <= to);
+      }
       const sorted = [...mh].sort((a, b) => (a.Month || "").localeCompare(b.Month || ""));
       return {
         months: sorted.map((r) => r.Month),
@@ -61,20 +71,20 @@ export default function HiresSource() {
         yLabel: "FTE Hires",
       };
     }
-    // Fallback: build from jobs data
+    // Fallback: build from jobs data (count 1 per req with hires)
     const hiredJobs = filteredJobs.filter((r) => (r.TotalHires || 0) > 0 && r.JobCloseDate);
     const byMonth = {};
     hiredJobs.forEach((r) => {
       const month = r.JobCloseDate.substring(0, 7);
-      byMonth[month] = (byMonth[month] || 0) + (r.TotalHires || 0);
+      byMonth[month] = (byMonth[month] || 0) + 1;
     });
     const sorted = Object.entries(byMonth).sort((a, b) => a[0].localeCompare(b[0]));
     return {
       months: sorted.map((e) => e[0] + "-01"),
       values: sorted.map((e) => e[1]),
-      yLabel: "Hires",
+      yLabel: "Reqs with Hires",
     };
-  }, [rawData.monthlyHires, filteredJobs]);
+  }, [rawData.monthlyHires, filteredJobs, filters.dateFrom, filters.dateTo]);
 
   // Hires by Source Type (donut)
   const sourceDonut = useMemo(() => {
@@ -89,11 +99,11 @@ export default function HiresSource() {
     };
   }, [filteredHiresSource]);
 
-  // Top 20 Hiring Managers
+  // Top 20 Hiring Managers (count 1 per req with hires)
   const mgrHires = useMemo(() => {
     const map = {};
     filteredJobs.forEach((r) => {
-      if (r.HiringManager) map[r.HiringManager] = (map[r.HiringManager] || 0) + (r.TotalHires || 0);
+      if (r.HiringManager && (r.TotalHires || 0) > 0) map[r.HiringManager] = (map[r.HiringManager] || 0) + 1;
     });
     const sorted = Object.entries(map)
       .sort((a, b) => a[1] - b[1])
@@ -104,7 +114,7 @@ export default function HiresSource() {
     };
   }, [filteredJobs]);
 
-  // Stacked monthly hires by Division
+  // Stacked monthly hires by Division (count 1 per req with hires)
   const stackedData = useMemo(() => {
     const hiredJobs = filteredJobs.filter((r) => (r.TotalHires || 0) > 0 && r.JobCloseDate);
     const months = new Set();
@@ -113,7 +123,7 @@ export default function HiresSource() {
       const month = r.JobCloseDate.substring(0, 7);
       months.add(month);
       if (!divMap[r.Division]) divMap[r.Division] = {};
-      divMap[r.Division][month] = (divMap[r.Division][month] || 0) + (r.TotalHires || 0);
+      divMap[r.Division][month] = (divMap[r.Division][month] || 0) + 1;
     });
     const sortedMonths = [...months].sort();
     return Object.entries(divMap).map(([div, monthData], i) => ({
@@ -134,7 +144,7 @@ export default function HiresSource() {
 
       <MetricRow
         metrics={[
-          { label: "Total Hires", value: fmtNumber(kpis.totalHires) },
+          { label: "Reqs with Hires", value: fmtNumber(kpis.totalHires) },
           { label: "Top Source", value: kpis.topSource },
           { label: "Top Division", value: kpis.topDivision },
           { label: "Top Hiring Manager", value: kpis.topManager },
@@ -190,7 +200,7 @@ export default function HiresSource() {
 
       {mgrHires.managers.length > 0 && (
         <ChartCard
-          title="Top 20 Hiring Managers by Hires"
+          title="Top 20 Hiring Managers by Reqs with Hires"
           data={[
             {
               type: "bar",
@@ -211,7 +221,7 @@ export default function HiresSource() {
 
       {stackedData.length > 0 && (
         <ChartCard
-          title="Monthly Hires by Division"
+          title="Monthly Reqs with Hires by Division"
           data={stackedData}
           layout={{
             barmode: "stack",
