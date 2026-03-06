@@ -59,16 +59,18 @@ export function applyFilters(data, filters) {
     const set = new Set(regions);
     filtered = filtered.filter((r) => set.has(r.Region));
   }
+  // Date range filter: always keep open jobs (they're still active regardless
+  // of when they were opened). For closed jobs, filter by JobOpenDate.
   if (dateFrom) {
     const from = new Date(dateFrom);
     filtered = filtered.filter(
-      (r) => r.JobOpenDate && new Date(r.JobOpenDate) >= from
+      (r) => r.CurrentJobStatus === "open" || (r.JobOpenDate && new Date(r.JobOpenDate) >= from)
     );
   }
   if (dateTo) {
     const to = new Date(dateTo);
     filtered = filtered.filter(
-      (r) => r.JobOpenDate && new Date(r.JobOpenDate) <= to
+      (r) => r.CurrentJobStatus === "open" || (r.JobOpenDate && new Date(r.JobOpenDate) <= to)
     );
   }
 
