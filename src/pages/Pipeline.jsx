@@ -93,6 +93,23 @@ export default function Pipeline() {
     };
   }, [allStatusJobs]);
 
+  // Interviews per Hiring Manager (top 20)
+  const hmInterviews = useMemo(() => {
+    const map = {};
+    allStatusJobs.forEach((r) => {
+      if (r.HiringManager && (r.TotalInterviewsConducted || 0) > 0) {
+        map[r.HiringManager] = (map[r.HiringManager] || 0) + (r.TotalInterviewsConducted || 0);
+      }
+    });
+    const entries = Object.entries(map)
+      .sort((a, b) => a[1] - b[1])
+      .slice(-20);
+    return {
+      managers: entries.map((e) => e[0]),
+      interviews: entries.map((e) => e[1]),
+    };
+  }, [allStatusJobs]);
+
   if (allStatusJobs.length === 0 && openJobs.length === 0) {
     return (
       <>
@@ -141,6 +158,28 @@ export default function Pipeline() {
         layout={{ height: 420, font: { size: 14 }, margin: { l: 120, r: 40, t: 10, b: 40 } }}
         style={{ marginTop: 16 }}
       />
+
+      {hmInterviews.managers.length > 0 && (
+        <ChartCard
+          title="Interviews per Hiring Manager"
+          data={[
+            {
+              type: "bar",
+              x: hmInterviews.interviews,
+              y: hmInterviews.managers,
+              orientation: "h",
+              marker: { color: COLORS.secondary },
+            },
+          ]}
+          layout={{
+            height: Math.max(400, hmInterviews.managers.length * 28),
+            margin: { l: 200, r: 20, t: 10, b: 40 },
+            yaxis: { title: "" },
+            xaxis: { title: "Interviews Conducted" },
+          }}
+          style={{ marginTop: 16 }}
+        />
+      )}
 
       {deptHires.departments.length > 0 && (
         <ChartCard

@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useFilters } from "../context/FilterContext";
 import { applyFilters } from "../utils/filters";
 import { COLORS } from "../config";
-import { fmtDays } from "../utils/formatters";
+import { fmtDays, fmtNumber } from "../utils/formatters";
 import PageHeader from "../components/PageHeader";
 import MetricRow from "../components/MetricRow";
 import ChartCard from "../components/ChartCard";
@@ -36,10 +36,23 @@ export default function TimeToHire() {
       .map((r) => r.JobOpenDays)
       .filter((v) => v != null && !isNaN(v));
 
+    // Offers per month: total offers / number of distinct months with activity
+    const totalOffers = allStatusJobs.reduce((s, r) => s + (r.TotalOffersMade || 0), 0);
+    const monthsWithOffers = new Set();
+    allStatusJobs.forEach((r) => {
+      if ((r.TotalOffersMade || 0) > 0 && r.AcceptedOfferCreatedAt) {
+        monthsWithOffers.add(r.AcceptedOfferCreatedAt.substring(0, 7));
+      }
+    });
+    const offersPerMonth = monthsWithOffers.size > 0
+      ? totalOffers / monthsWithOffers.size
+      : null;
+
     return {
       avgTTH: mean(tthValues),
       medianTTH: median(tthValues),
       avgDaysOpen: mean(daysOpenValues),
+      offersPerMonth,
     };
   }, [allStatusJobs]);
 
@@ -100,6 +113,7 @@ export default function TimeToHire() {
           { label: "Avg Days to Offer", value: fmtDays(kpis.avgTTH) },
           { label: "Median Days to Offer", value: fmtDays(kpis.medianTTH) },
           { label: "Avg Days Open", value: fmtDays(kpis.avgDaysOpen) },
+          { label: "Offers / Month", value: kpis.offersPerMonth != null ? fmtNumber(Math.round(kpis.offersPerMonth)) : "\u2014" },
         ]}
       />
 
