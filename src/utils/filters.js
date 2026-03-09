@@ -18,6 +18,7 @@ export function applyFilters(data, filters) {
     statuses,
     excludeTemplates,
     excludeInterns,
+    jobNames,
   } = filters;
 
   // Exclude template jobs by default
@@ -58,6 +59,10 @@ export function applyFilters(data, filters) {
   if (regions && regions.length > 0) {
     const set = new Set(regions);
     filtered = filtered.filter((r) => set.has(r.Region));
+  }
+  if (jobNames && jobNames.length > 0) {
+    const set = new Set(jobNames);
+    filtered = filtered.filter((r) => set.has(r.JobName));
   }
   // Date range filter: always keep open jobs (they're still active regardless
   // of when they were opened). For closed jobs, filter by JobOpenDate.

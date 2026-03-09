@@ -1,61 +1,30 @@
 import { useMemo } from "react";
 import { useFilters } from "../context/FilterContext";
+import { applyFilters } from "../utils/filters";
 import { COLORS, CHART_PALETTE } from "../config";
 import { fmtNumber } from "../utils/formatters";
 import PageHeader from "../components/PageHeader";
-import MetricRow from "../components/MetricRow";
 import ChartCard from "../components/ChartCard";
 
 export default function HiresSource() {
   const { filteredJobs, filteredHiresSource, rawData, filters } = useFilters();
 
-  const kpis = useMemo(() => {
-    // Count 1 per req with hires (not summing TotalHires which is inflated on pooled reqs)
-    const totalHires = filteredJobs.filter((r) => (r.TotalHires || 0) > 0).length;
+  // Include closed jobs for hire counts
+  const allStatusJobs = useMemo(
+    () => applyFilters(rawData.jobs, { ...filters, statuses: [] }),
+    [rawData.jobs, filters]
+  );
 
-    // Top source from HiresSource data
-    let topSource = "\u2014";
-    if (filteredHiresSource.length > 0) {
-      const srcMap = {};
-      filteredHiresSource.forEach((r) => {
-        if (r.SourceType) srcMap[r.SourceType] = (srcMap[r.SourceType] || 0) + (r.NumberHires || 0);
-      });
-      const entries = Object.entries(srcMap);
-      if (entries.length > 0) {
-        topSource = entries.sort((a, b) => b[1] - a[1])[0][0];
-      }
-    }
-
-    // Top division (by count of reqs with hires)
-    let topDivision = "\u2014";
-    const divMap = {};
-    filteredJobs.forEach((r) => {
-      if (r.Division && (r.TotalHires || 0) > 0) divMap[r.Division] = (divMap[r.Division] || 0) + 1;
-    });
-    const divEntries = Object.entries(divMap);
-    if (divEntries.length > 0) {
-      topDivision = divEntries.sort((a, b) => b[1] - a[1])[0][0];
-    }
-
-    // Top hiring manager (by count of reqs with hires)
-    let topManager = "\u2014";
-    const mgrMap = {};
-    filteredJobs.forEach((r) => {
-      if (r.HiringManager && (r.TotalHires || 0) > 0) mgrMap[r.HiringManager] = (mgrMap[r.HiringManager] || 0) + 1;
-    });
-    const mgrEntries = Object.entries(mgrMap);
-    if (mgrEntries.length > 0) {
-      topManager = mgrEntries.sort((a, b) => b[1] - a[1])[0][0];
-    }
-
-    return { totalHires, topSource, topDivision, topManager };
-  }, [filteredJobs, filteredHiresSource]);
+  // Hero metric: Reqs with Hires
+  const hiresYTD = useMemo(
+    () => allStatusJobs.filter((r) => (r.TotalHires || 0) > 0).length,
+    [allStatusJobs]
+  );
 
   // Monthly Hires Trend (from dedicated monthly_hires table, filtered by date range)
   const monthlyTrend = useMemo(() => {
     let mh = rawData.monthlyHires || [];
     if (mh.length > 0 && mh[0].Month && mh[0].FTEHires != null) {
-      // Apply date range filter from sidebar
       if (filters.dateFrom) {
         const from = new Date(filters.dateFrom);
         mh = mh.filter((r) => r.Month && new Date(r.Month) >= from);
@@ -71,8 +40,8 @@ export default function HiresSource() {
         yLabel: "FTE Hires",
       };
     }
-    // Fallback: build from jobs data (count 1 per req with hires)
-    const hiredJobs = filteredJobs.filter((r) => (r.TotalHires || 0) > 0 && r.JobCloseDate);
+    // Fallback: build from jobs data
+    const hiredJobs = allStatusJobs.filter((r) => (r.TotalHires || 0) > 0 && r.JobCloseDate);
     const byMonth = {};
     hiredJobs.forEach((r) => {
       const month = r.JobCloseDate.substring(0, 7);
@@ -84,7 +53,7 @@ export default function HiresSource() {
       values: sorted.map((e) => e[1]),
       yLabel: "Reqs with Hires",
     };
-  }, [rawData.monthlyHires, filteredJobs, filters.dateFrom, filters.dateTo]);
+  }, [rawData.monthlyHires, allStatusJobs, filters.dateFrom, filters.dateTo]);
 
   // Hires by Source Type (donut)
   const sourceDonut = useMemo(() => {
@@ -99,24 +68,9 @@ export default function HiresSource() {
     };
   }, [filteredHiresSource]);
 
-  // Top 20 Hiring Managers (count 1 per req with hires)
-  const mgrHires = useMemo(() => {
-    const map = {};
-    filteredJobs.forEach((r) => {
-      if (r.HiringManager && (r.TotalHires || 0) > 0) map[r.HiringManager] = (map[r.HiringManager] || 0) + 1;
-    });
-    const sorted = Object.entries(map)
-      .sort((a, b) => a[1] - b[1])
-      .slice(-20);
-    return {
-      managers: sorted.map((e) => e[0]),
-      hires: sorted.map((e) => e[1]),
-    };
-  }, [filteredJobs]);
-
-  // Stacked monthly hires by Division (count 1 per req with hires)
+  // Stacked monthly hires by Division
   const stackedData = useMemo(() => {
-    const hiredJobs = filteredJobs.filter((r) => (r.TotalHires || 0) > 0 && r.JobCloseDate);
+    const hiredJobs = allStatusJobs.filter((r) => (r.TotalHires || 0) > 0 && r.JobCloseDate);
     const months = new Set();
     const divMap = {};
     hiredJobs.forEach((r) => {
@@ -133,7 +87,7 @@ export default function HiresSource() {
       y: sortedMonths.map((m) => monthData[m] || 0),
       marker: { color: CHART_PALETTE[i % CHART_PALETTE.length] },
     }));
-  }, [filteredJobs]);
+  }, [allStatusJobs]);
 
   return (
     <>
@@ -142,14 +96,19 @@ export default function HiresSource() {
         description="Understand where hires come from and track hiring volume over time."
       />
 
-      <MetricRow
-        metrics={[
-          { label: "Reqs with Hires", value: fmtNumber(kpis.totalHires) },
-          { label: "Top Source", value: kpis.topSource },
-          { label: "Top Division", value: kpis.topDivision },
-          { label: "Top Hiring Manager", value: kpis.topManager },
-        ]}
-      />
+      {/* Hero metric */}
+      <div
+        className="metric-card"
+        style={{
+          textAlign: "center",
+          padding: "32px 24px",
+          marginBottom: 16,
+          borderLeft: `4px solid ${COLORS.success}`,
+        }}
+      >
+        <p className="metric-label" style={{ fontSize: "1rem" }}>Hires YTD</p>
+        <p className="metric-value" style={{ fontSize: "3rem" }}>{fmtNumber(hiresYTD)}</p>
+      </div>
 
       <div className="two-col" style={{ marginTop: 16 }}>
         <ChartCard
@@ -198,27 +157,6 @@ export default function HiresSource() {
         />
       </div>
 
-      {mgrHires.managers.length > 0 && (
-        <ChartCard
-          title="Top 20 Hiring Managers by Reqs with Hires"
-          data={[
-            {
-              type: "bar",
-              x: mgrHires.hires,
-              y: mgrHires.managers,
-              orientation: "h",
-              marker: { color: COLORS.primary },
-            },
-          ]}
-          layout={{
-            height: Math.max(400, mgrHires.managers.length * 28),
-            margin: { l: 180, r: 20, t: 10, b: 40 },
-            yaxis: { title: "" },
-            xaxis: { title: "Hires" },
-          }}
-        />
-      )}
-
       {stackedData.length > 0 && (
         <ChartCard
           title="Monthly Reqs with Hires by Division"
@@ -227,9 +165,10 @@ export default function HiresSource() {
             barmode: "stack",
             height: 450,
             xaxis: { title: "" },
-            yaxis: { title: "Hires" },
+            yaxis: { title: "Reqs with Hires" },
             legend: { orientation: "h", yanchor: "bottom", y: 1.02, xanchor: "right", x: 1 },
           }}
+          style={{ marginTop: 16 }}
         />
       )}
     </>

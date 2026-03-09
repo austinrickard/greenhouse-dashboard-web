@@ -105,6 +105,17 @@ export default function Sidebar() {
           isClearable
         />
 
+        <label className="filter-label">Job Title / Req</label>
+        <Select
+          isMulti
+          options={toOptions(filterOptions.JobName)}
+          value={toOptions(filters.jobNames)}
+          onChange={(sel) => update("jobNames", fromOptions(sel))}
+          styles={selectStyles}
+          placeholder="All Jobs"
+          isClearable
+        />
+
         <hr />
 
         <label className="filter-label">Job Status</label>

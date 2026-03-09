@@ -1,11 +1,11 @@
 import { useMemo } from "react";
 import { useFilters } from "../context/FilterContext";
-import { COLORS, CHART_PALETTE, FUNNEL_COLORS } from "../config";
+import { applyFilters } from "../utils/filters";
+import { COLORS, FUNNEL_COLORS } from "../config";
 import { fmtNumber, fmtPct } from "../utils/formatters";
 import PageHeader from "../components/PageHeader";
 import MetricRow from "../components/MetricRow";
 import ChartCard from "../components/ChartCard";
-import DataTable from "../components/DataTable";
 
 const STAGE_COLS = [
   { label: "Applications", key: "TotalApplicationsSubmitted" },
@@ -15,107 +15,88 @@ const STAGE_COLS = [
   { label: "Hires", key: "TotalHires" },
 ];
 
-const TABLE_COLS = [
-  { key: "JobID", label: "Job ID" },
-  { key: "JobName", label: "Job Name" },
-  { key: "CurrentJobStatus", label: "Status" },
-  { key: "Division", label: "Division" },
-  { key: "Department", label: "Department" },
-  { key: "HiringManager", label: "Hiring Manager" },
-  { key: "Region", label: "Region" },
-  { key: "JobOpenDays", label: "Days Open" },
-  { key: "TotalApplicationsSubmitted", label: "Applications" },
-  { key: "TotalScreenedApplications", label: "Screened" },
-  { key: "TotalInterviewsConducted", label: "Interviews" },
-  { key: "TotalOffersMade", label: "Offers" },
-  { key: "TotalHires", label: "Hires" },
-];
+function safePct(numerator, denominator) {
+  if (!denominator || denominator === 0) return null;
+  return (numerator / denominator) * 100;
+}
 
 export default function Pipeline() {
-  const { filteredJobs } = useFilters();
+  const { filteredJobs, filteredOpenings, filters, rawData } = useFilters();
 
-  const kpis = useMemo(() => {
-    const totalReqs = filteredJobs.length;
-    const totalApps = filteredJobs.reduce((s, r) => s + (r.TotalApplicationsSubmitted || 0), 0);
-    const totalScreened = filteredJobs.reduce((s, r) => s + (r.TotalScreenedApplications || 0), 0);
-    const totalHires = filteredJobs.filter((r) => (r.TotalHires || 0) > 0).length;
-    const conversion = totalApps > 0 ? (totalHires / totalApps) * 100 : 0;
-    return { totalReqs, totalApps, totalScreened, totalHires, conversion };
-  }, [filteredJobs]);
+  // All jobs with current filters EXCEPT status (so pipeline metrics include closed jobs)
+  const allStatusJobs = useMemo(
+    () => applyFilters(rawData.jobs, { ...filters, statuses: [] }),
+    [rawData.jobs, filters]
+  );
 
-  // Funnel data
+  const openJobs = useMemo(
+    () => filteredJobs.filter((r) => r.CurrentJobStatus === "open"),
+    [filteredJobs]
+  );
+
+  // Open Headcount from openings data
+  const openHeadcount = useMemo(() => {
+    return (filteredOpenings || []).filter((r) => r.OpenClosed === "Open").length;
+  }, [filteredOpenings]);
+
+  // Pipeline aggregates (from all-status jobs for YTD totals)
+  const pipeline = useMemo(() => {
+    const screens = allStatusJobs.reduce((s, r) => s + (r.TotalScreenedApplications || 0), 0);
+    const interviews = allStatusJobs.reduce((s, r) => s + (r.TotalInterviewsConducted || 0), 0);
+    const offers = allStatusJobs.reduce((s, r) => s + (r.TotalOffersMade || 0), 0);
+    const hires = allStatusJobs.filter((r) => (r.TotalHires || 0) > 0).length;
+    return { screens, interviews, offers, hires };
+  }, [allStatusJobs]);
+
+  // Passthrough rates
+  const passthrough = useMemo(() => ({
+    screenToInterview: safePct(pipeline.interviews, pipeline.screens),
+    interviewToNext: safePct(pipeline.offers, pipeline.interviews),
+    assessmentToFinal: null, // Data not available at this granularity
+    finalToOffer: null,      // Data not available at this granularity
+  }), [pipeline]);
+
+  // Funnel data with passthrough labels
   const funnel = useMemo(() => {
     const stages = [];
     const values = [];
     STAGE_COLS.forEach(({ label, key }) => {
-      // For Hires, count reqs with hires (not sum of TotalHires) to avoid
-      // inflated counts from pooled/batch requisitions
       const total = key === "TotalHires"
-        ? filteredJobs.filter((r) => (r[key] || 0) > 0).length
-        : filteredJobs.reduce((s, r) => s + (r[key] || 0), 0);
+        ? allStatusJobs.filter((r) => (r[key] || 0) > 0).length
+        : allStatusJobs.reduce((s, r) => s + (r[key] || 0), 0);
       stages.push(label);
       values.push(total);
     });
-    return { stages, values };
-  }, [filteredJobs]);
-
-  // Applications & Hires by Division
-  const divData = useMemo(() => {
-    const map = {};
-    filteredJobs.forEach((r) => {
-      if (!r.Division) return;
-      if (!map[r.Division]) map[r.Division] = { apps: 0, hires: 0 };
-      map[r.Division].apps += r.TotalApplicationsSubmitted || 0;
-      map[r.Division].hires += (r.TotalHires || 0) > 0 ? 1 : 0;
+    // Build text with passthrough rates between stages
+    const text = values.map((v, i) => {
+      if (i === 0) return fmtNumber(v);
+      const prev = values[i - 1];
+      const rate = prev > 0 ? ((v / prev) * 100).toFixed(1) : 0;
+      return `${fmtNumber(v)}  (${rate}% from prev)`;
     });
-    const sorted = Object.entries(map).sort((a, b) => b[1].apps - a[1].apps);
-    return {
-      divisions: sorted.map((e) => e[0]),
-      apps: sorted.map((e) => e[1].apps),
-      hires: sorted.map((e) => e[1].hires),
-    };
-  }, [filteredJobs]);
+    return { stages, values, text };
+  }, [allStatusJobs]);
 
-  // Top 15 Departments by Hires
+  // Hires by Department (full width bar)
   const deptHires = useMemo(() => {
     const map = {};
-    filteredJobs.forEach((r) => {
-      if (r.Department && (r.TotalHires || 0) > 0) map[r.Department] = (map[r.Department] || 0) + 1;
+    allStatusJobs.forEach((r) => {
+      if (r.Department && (r.TotalHires || 0) > 0) {
+        map[r.Department] = (map[r.Department] || 0) + 1;
+      }
     });
-    const sorted = Object.entries(map)
-      .sort((a, b) => a[1] - b[1])
-      .slice(-15);
+    const entries = Object.entries(map)
+      .sort((a, b) => a[1] - b[1]);
     return {
-      departments: sorted.map((e) => e[0]),
-      hires: sorted.map((e) => e[1]),
+      departments: entries.map((e) => e[0]),
+      hires: entries.map((e) => e[1]),
     };
-  }, [filteredJobs]);
+  }, [allStatusJobs]);
 
-  // Scatter: Apps vs Hires
-  const scatter = useMemo(() => {
-    const rows = filteredJobs.filter((r) => (r.TotalApplicationsSubmitted || 0) > 0);
-    const divs = [...new Set(rows.map((r) => r.Division).filter(Boolean))];
-    return divs.map((div, i) => {
-      const divRows = rows.filter((r) => r.Division === div);
-      return {
-        type: "scatter",
-        mode: "markers",
-        name: div,
-        x: divRows.map((r) => r.TotalApplicationsSubmitted),
-        y: divRows.map((r) => (r.TotalHires || 0) > 0 ? 1 : 0),
-        text: divRows.map((r) => r.JobName),
-        marker: {
-          size: divRows.map((r) => Math.min(Math.max((r.JobOpenDays || 5) / 3, 5), 30)),
-          color: CHART_PALETTE[i % CHART_PALETTE.length],
-        },
-      };
-    });
-  }, [filteredJobs]);
-
-  if (filteredJobs.length === 0) {
+  if (allStatusJobs.length === 0 && openJobs.length === 0) {
     return (
       <>
-        <PageHeader title="Hiring Pipeline" description="Visualize the recruiting funnel from applications through hires." />
+        <PageHeader title="Hiring Pipeline" description="Visualize the recruiting funnel, passthrough efficiency, and hiring velocity." />
         <p className="empty-state">No data available for the selected filters.</p>
       </>
     );
@@ -123,15 +104,23 @@ export default function Pipeline() {
 
   return (
     <>
-      <PageHeader title="Hiring Pipeline" description="Visualize the recruiting funnel from applications through hires." />
+      <PageHeader title="Hiring Pipeline" description="Visualize the recruiting funnel, passthrough efficiency, and hiring velocity." />
 
       <MetricRow
         metrics={[
-          { label: "Total Requisitions", value: fmtNumber(kpis.totalReqs) },
-          { label: "Applications", value: fmtNumber(kpis.totalApps) },
-          { label: "Screened", value: fmtNumber(kpis.totalScreened) },
-          { label: "Reqs with Hires", value: fmtNumber(kpis.totalHires) },
-          { label: "App \u2192 Hire %", value: fmtPct(kpis.conversion) },
+          { label: "Open Reqs", value: fmtNumber(openJobs.length) },
+          { label: "Open Headcount", value: fmtNumber(openHeadcount) },
+          { label: "YTD Recruiter Screens", value: fmtNumber(pipeline.screens) },
+          { label: "YTD HM Interviews", value: fmtNumber(pipeline.interviews) },
+          { label: "YTD Hires", value: fmtNumber(pipeline.hires) },
+        ]}
+      />
+      <MetricRow
+        metrics={[
+          { label: "Screen \u2192 Interview %", value: fmtPct(passthrough.screenToInterview) },
+          { label: "Interview \u2192 Offer %", value: fmtPct(passthrough.interviewToNext) },
+          { label: "Assessment \u2192 Final %", value: passthrough.assessmentToFinal != null ? fmtPct(passthrough.assessmentToFinal) : "N/A" },
+          { label: "Final \u2192 Offer %", value: passthrough.finalToOffer != null ? fmtPct(passthrough.finalToOffer) : "N/A" },
         ]}
       />
 
@@ -142,79 +131,38 @@ export default function Pipeline() {
             type: "funnel",
             y: funnel.stages,
             x: funnel.values,
-            textinfo: "value+percent initial",
+            text: funnel.text,
+            textinfo: "text",
+            textposition: "inside",
             marker: { color: FUNNEL_COLORS.slice(0, funnel.stages.length) },
             connector: { line: { color: "#DDD", width: 1 } },
           },
         ]}
-        layout={{ height: 350, font: { size: 14 } }}
+        layout={{ height: 420, font: { size: 14 }, margin: { l: 120, r: 40, t: 10, b: 40 } }}
         style={{ marginTop: 16 }}
       />
 
-      <div className="two-col">
+      {deptHires.departments.length > 0 && (
         <ChartCard
-          title="Applications & Hires by Division"
-          data={[
-            {
-              type: "bar",
-              x: divData.divisions,
-              y: divData.apps,
-              name: "Applications",
-              marker: { color: COLORS.primary },
-            },
-            {
-              type: "bar",
-              x: divData.divisions,
-              y: divData.hires,
-              name: "Hires",
-              marker: { color: COLORS.success },
-            },
-          ]}
-          layout={{
-            barmode: "group",
-            height: 400,
-            legend: { orientation: "h", yanchor: "bottom", y: 1.02, xanchor: "right", x: 1 },
-          }}
-        />
-
-        <ChartCard
-          title="Top 15 Departments by Reqs with Hires"
+          title="Hires by Department"
           data={[
             {
               type: "bar",
               x: deptHires.hires,
               y: deptHires.departments,
               orientation: "h",
-              marker: { color: COLORS.secondary },
+              marker: { color: COLORS.primary },
             },
           ]}
           layout={{
-            height: 400,
-            margin: { l: 150, r: 20, t: 10, b: 40 },
+            height: Math.max(400, deptHires.departments.length * 28),
+            margin: { l: 200, r: 20, t: 10, b: 40 },
             yaxis: { title: "" },
-            xaxis: { title: "Hires" },
+            xaxis: { title: "Reqs with Hires" },
           }}
+          style={{ marginTop: 16 }}
         />
-      </div>
-
-      <ChartCard
-        title="Applications vs Hires per Requisition"
-        data={scatter}
-        layout={{
-          height: 450,
-          xaxis: { title: "Applications Submitted" },
-          yaxis: { title: "Hires" },
-        }}
-      />
-
-      <div className="chart-card">
-        <h3 className="chart-title">Requisition Details</h3>
-        <DataTable
-          data={filteredJobs}
-          columns={TABLE_COLS}
-          defaultSort="TotalApplicationsSubmitted"
-        />
-      </div>
+      )}
     </>
   );
 }

@@ -10,6 +10,7 @@ const INITIAL_FILTERS = {
   departments: [],
   subDepartments: [],
   regions: [],
+  jobNames: [],
   statuses: ["open"],
   excludeTemplates: true,
   excludeInterns: false,
@@ -47,6 +48,7 @@ export function FilterProvider({ data, children }) {
       HiringManager: unique("HiringManager"),
       Recruiter: unique("Recruiter"),
       CurrentJobStatus: unique("CurrentJobStatus"),
+      JobName: unique("JobName"),
     };
   }, [data.jobs]);
 
