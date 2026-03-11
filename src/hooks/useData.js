@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 
 const base = import.meta.env.BASE_URL;
+const bustCache = (url) => `${url}?v=${__DATA_VERSION__}`;
 const DATA_FILES = {
-  jobs: `${base}data/jobs.json`,
-  hiresSource: `${base}data/hires_source.json`,
-  monthlyHires: `${base}data/monthly_hires.json`,
-  kpiScalars: `${base}data/kpi_scalars.json`,
-  openings: `${base}data/openings.json`,
+  jobs: bustCache(`${base}data/jobs.json`),
+  hiresSource: bustCache(`${base}data/hires_source.json`),
+  monthlyHires: bustCache(`${base}data/monthly_hires.json`),
+  kpiScalars: bustCache(`${base}data/kpi_scalars.json`),
+  openings: bustCache(`${base}data/openings.json`),
 };
 
 export function useData() {
