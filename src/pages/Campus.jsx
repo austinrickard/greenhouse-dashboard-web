@@ -195,6 +195,7 @@ export default function Campus() {
 
       <div className="chart-card" style={{ marginTop: 16 }}>
         <h3 className="chart-title">Campus Requisitions</h3>
+        <p className="chart-description">All intern and co-op requisitions (both open and closed). Click column headers to sort. Job names link to Greenhouse.</p>
         <DataTable
           data={campusJobs}
           columns={TABLE_COLS}
@@ -206,6 +207,7 @@ export default function Campus() {
       <div className="two-col" style={{ marginTop: 16 }}>
         <ChartCard
           title="Active Campus Reqs by Division"
+          description="Currently open intern/co-op requisitions by division. Shows where campus hiring demand is concentrated."
           data={[
             {
               type: "bar",
@@ -225,6 +227,7 @@ export default function Campus() {
 
         <ChartCard
           title="Aging Buckets (Open Reqs)"
+          description="How long campus requisitions have been open. 90+ day reqs may need a revised sourcing strategy or scope adjustment."
           data={[
             {
               type: "bar",
@@ -245,6 +248,7 @@ export default function Campus() {
       <div className="two-col" style={{ marginTop: 16 }}>
         <ChartCard
           title="Campus Hires YTD by Division"
+          description="Intern/co-op requisitions with accepted hires this year, grouped by division."
           data={[
             {
               type: "bar",
@@ -265,6 +269,7 @@ export default function Campus() {
         {monthlyTrend.months.length > 0 ? (
           <ChartCard
             title="Campus Hires by Month (YTD)"
+            description="Monthly campus hiring velocity for the current year. Based on accepted offer dates."
             data={[
               {
                 type: "bar",

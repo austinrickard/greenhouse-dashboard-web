@@ -5,10 +5,11 @@ const BASE_CONFIG = {
   displayModeBar: false,
 };
 
-export default function ChartCard({ title, data, layout, style }) {
+export default function ChartCard({ title, description, data, layout, style }) {
   return (
     <div className="chart-card">
       {title && <h3 className="chart-title">{title}</h3>}
+      {description && <p className="chart-description">{description}</p>}
       <Plot
         data={data}
         layout={{

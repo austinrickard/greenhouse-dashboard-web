@@ -95,6 +95,7 @@ export default function Overview() {
       <div className="two-col" style={{ marginTop: 16 }}>
         <ChartCard
           title="Hires by Division"
+          description="Number of requisitions with at least one accepted hire, grouped by division. Counts 1 per req to avoid inflation from pooled/batch requisitions."
           data={[
             {
               type: "bar",
@@ -114,6 +115,7 @@ export default function Overview() {
 
         <ChartCard
           title="Open Reqs by Division"
+          description="Currently open requisitions broken down by division. Reflects active hiring demand across the organization."
           data={[
             {
               type: "bar",

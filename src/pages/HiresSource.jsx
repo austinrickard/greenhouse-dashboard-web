@@ -113,6 +113,7 @@ export default function HiresSource() {
       <div className="two-col" style={{ marginTop: 16 }}>
         <ChartCard
           title="Monthly Hires Trend"
+          description="Monthly hiring volume over time. Uses FTE hires from the dedicated monthly report when available; otherwise falls back to counting requisitions with hires by close date."
           data={
             monthlyTrend.months.length > 0
               ? [
@@ -136,6 +137,7 @@ export default function HiresSource() {
 
         <ChartCard
           title="Hires by Source Type"
+          description="Breakdown of where hires originated (e.g., referral, job board, agency). Sourced from the Greenhouse hires-by-source report."
           data={
             sourceDonut.labels.length > 0
               ? [
@@ -160,6 +162,7 @@ export default function HiresSource() {
       {stackedData.length > 0 && (
         <ChartCard
           title="Monthly Reqs with Hires by Division"
+          description="Stacked view of monthly requisitions with hires, split by division. Shows hiring velocity distribution across the organization over time."
           data={stackedData}
           layout={{
             barmode: "stack",

@@ -188,7 +188,14 @@ body {
   font-size: 1.1rem;
   font-weight: 600;
   color: #1A1A2E;
-  margin-bottom: 12px;
+  margin-bottom: 4px;
+}
+
+.chart-description {
+  font-size: 0.82rem;
+  color: #888;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
 }
 
 /* ── Two Column Grid ──────────────────────────────────────────────────────── */

@@ -143,6 +143,7 @@ export default function Pipeline() {
 
       <ChartCard
         title="Recruiting Funnel"
+        description="Visualizes the drop-off at each stage of the hiring process: Applications, Screened, Interviews, Offers, and Hires. Percentages show the passthrough rate from the previous stage."
         data={[
           {
             type: "funnel",
@@ -162,6 +163,7 @@ export default function Pipeline() {
       {hmInterviews.managers.length > 0 && (
         <ChartCard
           title="Interviews per Hiring Manager"
+          description="Top 20 hiring managers ranked by total interviews conducted. Helps identify managers with high interview volume and potential bottlenecks."
           data={[
             {
               type: "bar",
@@ -184,6 +186,7 @@ export default function Pipeline() {
       {deptHires.departments.length > 0 && (
         <ChartCard
           title="Hires by Department"
+          description="Requisitions with at least one accepted hire, grouped by department. Shows which teams are successfully closing roles."
           data={[
             {
               type: "bar",

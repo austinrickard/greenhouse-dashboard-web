@@ -120,6 +120,7 @@ export default function TimeToHire() {
       {deptTTH.departments.length > 0 && (
         <ChartCard
           title="Average Days to Offer by Department"
+          description="Average number of days from job opening to accepted offer, by department. Green indicates faster hiring; red indicates longer timelines that may need attention."
           data={[
             {
               type: "bar",
@@ -150,6 +151,7 @@ export default function TimeToHire() {
       {trendData.months.length > 0 && (
         <ChartCard
           title="Average Time-to-Hire Trend"
+          description="Monthly trend of average days to accepted offer. Based on the job close date month. Helps track whether hiring speed is improving or declining over time."
           data={[
             {
               type: "scatter",

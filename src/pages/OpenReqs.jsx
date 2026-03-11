@@ -177,6 +177,7 @@ export default function OpenReqs() {
 
       <div className="chart-card" style={{ marginTop: 16 }}>
         <h3 className="chart-title">Open Requisitions Detail</h3>
+        <p className="chart-description">Sortable table of all open requisitions with pipeline activity. Click column headers to sort. Job names link directly to Greenhouse. Days Open cells are color-coded by aging bucket.</p>
         <DataTable
           data={openJobs}
           columns={TABLE_COLS}
@@ -188,6 +189,7 @@ export default function OpenReqs() {
       <div className="two-col" style={{ marginTop: 16 }}>
         <ChartCard
           title="Open Reqs by Division / Department"
+          description="Treemap showing how open requisitions are distributed across divisions and departments. Larger boxes indicate more open roles."
           data={[
             {
               type: "treemap",
@@ -208,6 +210,7 @@ export default function OpenReqs() {
 
         <ChartCard
           title="Aging Buckets"
+          description="Distribution of open requisitions by how long they've been open. Green (0-30 days) is healthy; red (90+ days) may indicate hard-to-fill roles that need attention."
           data={[
             {
               type: "bar",
@@ -227,6 +230,7 @@ export default function OpenReqs() {
 
       <ChartCard
         title="Requisition Age vs Applications Submitted"
+        description="Each dot is an open requisition plotted by how long it's been open (x-axis) vs. how many applications it's received (y-axis). Older reqs with few applications may need sourcing support."
         data={scatterTraces}
         layout={{
           height: 400,
